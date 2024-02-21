@@ -9,10 +9,13 @@
 #define MAXCARDS 52
 #define MAXRANKS 13
 #define MAXSUITS 4
+#define STARTAMT 1000
 
 // functions
 void init(int *deck);
 int shuffle(int *deck);
+void play(int *deck, int bankAmt);
+int addMoney(int bankAmt); 
 
 // structs 
 typedef struct{
@@ -42,27 +45,72 @@ int shuffle(int *deck){
     return 0; 
 }
 
+int addMoney(int bankAmt){
+    char input;
+    int moneyToAdd; 
+
+    while(input != 'N'){
+        printf("Current bank amount: %d\n", bankAmt);
+
+        printf("Do you want to add money (Y/N): ");
+        scanf(" %c", &input); 
+
+        if(input == 'Y'){
+            printf("How much would you like to add: ");
+            scanf(" %d", &moneyToAdd);
+            bankAmt += moneyToAdd; 
+        } else if(input == 'N'){
+            
+        } else{
+            printf("Invalid command (Y/N)\n");
+        }
+    }
+    return bankAmt; 
+}
+
 int main(){
-    char ch; 
+    char ch;
+    char input;
     int deck[MAXCARDS];
     int card = 0;
+    int bankAmt = STARTAMT; 
 
     init(deck); 
+     
+     
 
+    while(input != 'Q'){
+        printf("Enter your choice (P: Play, $: Add Money, Q: Quit): ");
+        scanf(" %c", &input);
+        switch(input){
+            case 'P':
+                // play(deck, STARTAMT);
+                break;
+            case '$':
+                bankAmt = addMoney(bankAmt);
+                break;
+            case 'Q':
+                exit(0); 
+                break;
+            default:
+                printf("Not a valid command\n");
+                break; 
+        }
+    }
 
     // DEBUG: testing shuffling 
-    do{
-        if(card <= MAXCARDS){
-            card = shuffle(deck);
-        }
+    // do{
+    //     if(card <= MAXCARDS){
+    //         card = shuffle(deck);
+    //     }
 
-        printf("%s of %s\t", faces[deck[card] % 13], suits[deck[card] / 13]);
-        card++;
+    //     printf("%s of %s\t", faces[deck[card] % 13], suits[deck[card] / 13]);
+    //     card++;
 
-        printf("Enter to deal, Q to quit\n");
-        ch = getchar();
+    //     printf("Enter to deal, Q to quit\n");
+    //     ch = getchar();
 
-    } while (toupper(ch) != 'Q'); 
+    // } while (toupper(ch) != 'Q'); 
 
     return 0; 
 }
