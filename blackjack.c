@@ -14,6 +14,7 @@
 // functions
 void init(int *deck);
 int shuffle(int *deck);
+int drawPlayerCards(int *deck, int *cardIndex, int numCards);
 void play(int *deck, int bankAmt);
 int addMoney(int bankAmt); 
 
@@ -43,6 +44,72 @@ int shuffle(int *deck){
         deck[card] = tmp;
     }
     return 0; 
+}
+
+int drawPlayerCards(int *deck, int *cardIndex, int numCards){
+    int playerTotal = 0;
+
+    /// draw first two player cards
+    for(int i = 0; i < numCards; i++){
+
+        if(*cardIndex >= MAXCARDS){
+            printf("No more cards to draw.\n");
+            return 0;
+        }
+
+        int card = deck[*cardIndex];
+        printf("%s of %s\n", faces[card % 13], suits[card / 13]);
+
+        char *face = faces[card % 13];
+
+        // calculate int value from char face
+        if(strcmp(face, "A") == 0){
+            playerTotal += 1;
+        } else if(strcmp(face, "J") == 0 || strcmp(face, "Q") == 0 || strcmp(face, "K") == 0){
+            playerTotal += 10;
+        } else{
+            playerTotal += atoi(face);
+        }
+        (*cardIndex)++;
+    }
+    return playerTotal;
+}
+
+void play(int *deck, int bankAmt){
+    int betAmt;
+    int card, cardIndex;
+    int playerTotal; 
+
+    printf("Current Bank Total: $%d\n", bankAmt);
+    printf("Place Your Bet: ");
+
+    // Bet logic
+    while(1){
+        scanf("%d", &betAmt);
+
+        if(betAmt <= 0 || betAmt > bankAmt){
+            printf("Invalid Bet of amount %d. Try again", betAmt);
+        } else{
+            break;
+        }
+    }
+    bankAmt -= betAmt;
+    printf("Your bet of $%d has been accepted.\n", betAmt);
+
+    /* ACTUAL GAME LOGIC*/
+    shuffle(deck);
+
+    // Draw cards logic
+    printf("Player's hands:\n");
+    playerTotal = drawPlayerCards(deck, &cardIndex, 2);
+    printf("Player Total: %d\n", playerTotal);
+
+    // Draw dealer card
+
+    // hit/stand/double, win or bust
+
+    printf("Current Bank Total: $%d\n", bankAmt);
+    
 }
 
 int addMoney(int bankAmt){
@@ -84,7 +151,7 @@ int main(){
         scanf(" %c", &input);
         switch(input){
             case 'P':
-                // play(deck, STARTAMT);
+                play(deck, STARTAMT);
                 break;
             case '$':
                 bankAmt = addMoney(bankAmt);
