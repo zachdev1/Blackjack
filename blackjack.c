@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
+#include<windows.h>
 
 // defines
 #define MAX 9
@@ -14,7 +15,9 @@
 // functions
 void init(int *deck);
 int shuffle(int *deck);
+int calculateCardValue(char *face, int currentTotal);
 int drawPlayerCards(int *deck, int *cardIndex, int numCards);
+int drawDealerCards(int *deck, int *cardIndex, int numCards);
 void play(int *deck, int bankAmt);
 int addMoney(int bankAmt); 
 
@@ -46,8 +49,24 @@ int shuffle(int *deck){
     return 0; 
 }
 
+int calculateCardValue(char *face, int currentTotal){
+    if(strcmp(face, "A") == 0){
+        if(currentTotal + 11 > 21){
+            return 1;
+        } else{
+            return 11;
+        }
+    } else if(strcmp(face, "J") == 0 || strcmp(face, "Q") == 0 || strcmp(face, "K") == 0){
+        return 10;
+    } else{
+        return atoi(face);
+    }
+}
+
 int drawPlayerCards(int *deck, int *cardIndex, int numCards){
     int playerTotal = 0;
+    char *face;
+    int card = 0;
 
     /// draw first two player cards
     for(int i = 0; i < numCards; i++){
@@ -57,28 +76,48 @@ int drawPlayerCards(int *deck, int *cardIndex, int numCards){
             return 0;
         }
 
-        int card = deck[*cardIndex];
+        card = deck[*cardIndex];
+        Sleep(2000);
         printf("%s of %s\n", faces[card % 13], suits[card / 13]);
 
-        char *face = faces[card % 13];
+        face = faces[card % 13];
 
         // calculate int value from char face
-        if(strcmp(face, "A") == 0){
-            playerTotal += 1;
-        } else if(strcmp(face, "J") == 0 || strcmp(face, "Q") == 0 || strcmp(face, "K") == 0){
-            playerTotal += 10;
-        } else{
-            playerTotal += atoi(face);
-        }
+        playerTotal += calculateCardValue(face, playerTotal);
         (*cardIndex)++;
     }
     return playerTotal;
 }
 
+int drawDealerCards(int *deck, int *cardIndex, int numCards){
+    int dealerTotal = 0;
+    char *face;
+    int card, secondCard = 0;
+
+    // draw first two dealer cards
+    if(*cardIndex >= MAXCARDS){
+        printf("No more cards to draw.\n");
+        return 0;
+    }
+
+    card = deck[*cardIndex];
+    printf("%s of %s\n", faces[card % 13], suits[card / 13]);
+
+    face = faces[card % 13];
+
+    // calculate int value from char face
+    dealerTotal += calculateCardValue(face, dealerTotal);
+    (*cardIndex)++;
+
+    /*Implement second card logic*/
+    
+    return dealerTotal;
+}
+
 void play(int *deck, int bankAmt){
     int betAmt;
     int card, cardIndex;
-    int playerTotal; 
+    int playerTotal,dealerTotal; 
 
     printf("Current Bank Total: $%d\n", bankAmt);
     printf("Place Your Bet: ");
@@ -99,14 +138,17 @@ void play(int *deck, int bankAmt){
     /* ACTUAL GAME LOGIC*/
     shuffle(deck);
 
-    // Draw cards logic
+    // Draw initial card logic
     printf("Player's hands:\n");
     playerTotal = drawPlayerCards(deck, &cardIndex, 2);
     printf("Player Total: %d\n", playerTotal);
-
-    // Draw dealer card
+    printf("\n");
+    dealerTotal = drawDealerCards(deck, &cardIndex, 2);
+    printf("Dealer Total %d\n", dealerTotal);
+    printf("\n");
 
     // hit/stand/double, win or bust
+
 
     printf("Current Bank Total: $%d\n", bankAmt);
     
@@ -164,20 +206,5 @@ int main(){
                 break; 
         }
     }
-
-    // DEBUG: testing shuffling 
-    // do{
-    //     if(card <= MAXCARDS){
-    //         card = shuffle(deck);
-    //     }
-
-    //     printf("%s of %s\t", faces[deck[card] % 13], suits[deck[card] / 13]);
-    //     card++;
-
-    //     printf("Enter to deal, Q to quit\n");
-    //     ch = getchar();
-
-    // } while (toupper(ch) != 'Q'); 
-
     return 0; 
 }
