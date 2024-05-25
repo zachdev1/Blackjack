@@ -14,42 +14,38 @@
 
 // functions
 void init(int *deck);
-int shuffle(int *deck);
+void shuffle(int *deck);
 int calculateCardValue(char *face, int currentTotal);
 int drawPlayerCards(int *deck, int *cardIndex, int numCards, int playerTotal);
-int drawDealerCards(int *deck, int *cardIndex, int numCards);
+int drawDealerCards(int *deck, int *cardIndex, int numCards, int dealerTotal);
 int hitOrStand(int *deck, int *cardIndex, int numOfCards, int currentTotal);
-void play(int *deck, int bankAmt);
+int dealerAdditionalCards(int *deck, int *cardIndex, int numOfCards, int currentTotal);
+int determineOutcome(int playerTotal, int dealerTotal, int bankAmt, int betAmt);
+int play(int *deck, int bankAmt);
 int addMoney(int bankAmt); 
 
-// structs 
-typedef struct{
-    int *rank;
-    char suit[MAX];
-} cards; 
-
-
+// faces and suits arrays
 char *faces[MAXRANKS]= {"A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"};
 char suits[MAXSUITS][MAX] = {"Clubs", "Diamonds", "Hearts", "Spades"};
 
+// initialize deck of cards
 void init(int *deck){
     for(int i = 0; i < MAXCARDS; i++){
         deck[i] = i; 
     }
 }
 
-int shuffle(int *deck){
-    int card, tmp; 
-
-    for(int i = 0; i < MAXCARDS; i++){
-        card = rand() % (i + 1);
-        tmp = deck[i];
-        deck[i] = deck[card];
-        deck[card] = tmp;
+// Fisher-Yates shuffling algorithm
+void shuffle(int *deck) {
+    for(int i = MAXCARDS - 1; i > 0; i--){
+        int j = rand() % (i + 1);
+        int tmp = deck[i];
+        deck[i] = deck[j];
+        deck[j] = tmp;
     }
-    return 0; 
 }
 
+// calculate card value
 int calculateCardValue(char *face, int currentTotal){
     if(strcmp(face, "A") == 0){
         if(currentTotal + 11 > 21){
@@ -64,6 +60,7 @@ int calculateCardValue(char *face, int currentTotal){
     }
 }
 
+// draw first 2 player cards
 int drawPlayerCards(int *deck, int *cardIndex, int numCards, int playerTotal){
     char *face;
     int card = 0;
@@ -77,7 +74,6 @@ int drawPlayerCards(int *deck, int *cardIndex, int numCards, int playerTotal){
         }
 
         card = deck[*cardIndex];
-        // Sleep(2000);
         printf("%s of %s\n", faces[card % 13], suits[card / 13]);
 
         face = faces[card % 13];
@@ -86,13 +82,16 @@ int drawPlayerCards(int *deck, int *cardIndex, int numCards, int playerTotal){
         playerTotal += calculateCardValue(face, playerTotal);
         (*cardIndex)++;
     }
+    if(playerTotal == 21){
+        printf("BlackJack!\n");
+    }
     return playerTotal;
 }
 
-int drawDealerCards(int *deck, int *cardIndex, int numCards){
-    int dealerTotal = 0;
+// draw initial dealer card
+int drawDealerCards(int *deck, int *cardIndex, int numCards, int dealerTotal){
     char *face;
-    int card, secondCard = 0;
+    int card;
 
     // draw first two dealer cards
     if(*cardIndex >= MAXCARDS){
@@ -108,17 +107,15 @@ int drawDealerCards(int *deck, int *cardIndex, int numCards){
     // calculate int value from char face
     dealerTotal += calculateCardValue(face, dealerTotal);
     (*cardIndex)++;
-
-    /*Implement second card logic*/
-    
+   
     return dealerTotal;
 }
 
-
-int hitOrStand(int *deck, int *cardIndex, int numOfCards, int currentTotal){
+// player decision to hit or stand 
+int hitOrStand(int *deck, int *cardIndex, int numOfCards, int playerTotal){
     char input;
 
-    while(currentTotal < 21 ){
+    while(playerTotal < 21){
         printf("Hit or Stand (H/S):");
         scanf(" %c", &input);
         printf("\n");
@@ -126,10 +123,9 @@ int hitOrStand(int *deck, int *cardIndex, int numOfCards, int currentTotal){
         if(input == 'S'){
             break;
         } else if(input == 'H'){
-            currentTotal = drawPlayerCards(deck, cardIndex, numOfCards, currentTotal);
-            printf("current total: %d\n", currentTotal);
-
-            if(currentTotal > 21){
+            playerTotal = drawPlayerCards(deck, cardIndex, numOfCards, playerTotal);
+            printf("Current total %d\n", playerTotal);
+            if(playerTotal > 21){
                 printf("Bust!\n");
                 break;
             }
@@ -137,11 +133,55 @@ int hitOrStand(int *deck, int *cardIndex, int numOfCards, int currentTotal){
             printf("Invalid command (H/S)\n");
         }
     }
-    printf("\n");
+    return playerTotal;
+}
+
+// deal additional dealer cards if total less than 17
+int dealerAdditionalCards(int *deck, int *cardIndex, int numOfCards, int currentTotal){
+    int card;
+    char *face;
+
+    if(*cardIndex >= MAXCARDS){
+        printf("No more cards to draw.\n");
+        return 0;
+    }
+
+    while(currentTotal < 17 ){
+
+    card = deck[*cardIndex];
+    printf("%s of %s\n", faces[card % 13], suits[card / 13]);
+
+    face = faces[card % 13];
+
+    // calculate int value from char face
+    currentTotal += calculateCardValue(face, currentTotal);
+    (*cardIndex)++;
+    } 
+
     return currentTotal;
 }
 
-void play(int *deck, int bankAmt){
+// determine the outcome 
+int determineOutcome(int playerTotal, int dealerTotal, int bankAmt, int betAmt){
+    if(playerTotal > 21){
+        printf("Player Busts! Dealer wins.\n");
+    } else if(dealerTotal > 21){
+        printf("Dealer Busts! Player wins.\n");
+        bankAmt += (2 *betAmt);
+    } else if(playerTotal > dealerTotal){
+        printf("Player wins!\n");
+        bankAmt += (2 *betAmt);
+    } else if(dealerTotal > playerTotal){
+        printf("Dealer wins!\n");
+    } else{
+        printf("It's a tie!\n");
+        bankAmt += betAmt;
+    }
+    return bankAmt;
+}
+
+// 
+int play(int *deck, int bankAmt){
     int betAmt;
     int card, cardIndex;
     int playerTotal = 0, dealerTotal = 0; 
@@ -161,30 +201,41 @@ void play(int *deck, int bankAmt){
     }
     bankAmt -= betAmt;
     printf("Your bet of $%d has been accepted.\n", betAmt);
+    printf("\n");
 
     /* ACTUAL GAME LOGIC*/
     shuffle(deck);
 
-    // Draw initial card logic
+    // draw initial card logic
     printf("Player's hands:\n");
     playerTotal = drawPlayerCards(deck, &cardIndex, 2, playerTotal);
     printf("Player Total: %d\n", playerTotal);
     printf("\n");
-    dealerTotal = drawDealerCards(deck, &cardIndex, 2);
+
+    // draw dealer card
+    printf("Dealer's hands:\n");
+    dealerTotal = drawDealerCards(deck, &cardIndex, 1, dealerTotal);
     printf("Dealer Total %d\n", dealerTotal);
     printf("\n");
 
-    // hit/stand/double, win or bust
+    // player hit/stand
     playerTotal = hitOrStand(deck, &cardIndex, 1, playerTotal);
-    
-    /*DEBUG*/
-    printf("playerTotal after hit/stand: %d\n", playerTotal);
-    
+    printf("Player Total %d\n", playerTotal);
+    printf("\n");
+
+    // draw additional dealer cards
+    dealerTotal = dealerAdditionalCards(deck, &cardIndex, 1, dealerTotal);
+    printf("Dealer Total %d\n", dealerTotal);
+    printf("\n");
+
+    // determine the outcome, update bank
+    bankAmt = determineOutcome(playerTotal, dealerTotal, bankAmt, betAmt);
 
     printf("Current Bank Total: $%d\n", bankAmt);
-    
+    return bankAmt;
 }
 
+// add money to bank
 int addMoney(int bankAmt){
     char input;
     int moneyToAdd; 
@@ -213,7 +264,9 @@ int main(){
     char input;
     int deck[MAXCARDS];
     int card = 0;
-    int bankAmt = STARTAMT; 
+    int bankAmt = STARTAMT;
+
+    srand(time(NULL));
 
     init(deck); 
      
@@ -222,7 +275,7 @@ int main(){
         scanf(" %c", &input);
         switch(input){
             case 'P':
-                play(deck, STARTAMT);
+                bankAmt = play(deck, bankAmt);
                 break;
             case '$':
                 bankAmt = addMoney(bankAmt);
